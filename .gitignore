@@ -1,0 +1,70 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# Go build cache
+go-build/
+
+# IDE specific files
+.idea/
+*.swp
+*.swo
+*~
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+
+# Debug files
+debug
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build output
+dist/
+build/
+
+# Coverage reports
+coverage.txt
+coverage.html
+*.coverprofile
+
+# Binary output
+openalgo-go
+
+# Example binaries
+examples/main
+examples/examples
+
+# Local configuration
+config.local.yaml
+config.local.json
