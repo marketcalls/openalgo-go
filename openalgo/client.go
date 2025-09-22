@@ -112,9 +112,22 @@ func (c *Client) makeRequest(method, endpoint string, payload interface{}) (map[
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
+	// Check if response is JSON
 	var result map[string]interface{}
 	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+		// If response is not JSON, include the actual response in error for debugging
+		if len(body) > 200 {
+			return nil, fmt.Errorf("failed to unmarshal response: %w (response: %s...)", err, string(body[:200]))
+		}
+		return nil, fmt.Errorf("failed to unmarshal response: %w (response: %s)", err, string(body))
+	}
+
+	// Check if API returned an error
+	if status, ok := result["status"].(string); ok && status == "error" {
+		if msg, ok := result["message"].(string); ok {
+			return nil, fmt.Errorf("API error: %s", msg)
+		}
+		return nil, fmt.Errorf("API error: %v", result)
 	}
 
 	return result, nil
