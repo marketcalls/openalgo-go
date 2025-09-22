@@ -141,16 +141,17 @@ func main() {
 	if err != nil {
 		log.Printf("Error fetching position book: %v", err)
 	} else {
-		if posData, ok := positionBook["data"].(map[string]interface{}); ok {
-			// Check for net positions
-			if netPos, ok := posData["net"].([]interface{}); ok && len(netPos) > 0 {
-				fmt.Printf("Net Positions: %d\n", len(netPos))
+		// Position data is directly an array under "data"
+		if positions, ok := positionBook["data"].([]interface{}); ok {
+			if len(positions) > 0 {
+				fmt.Printf("Total Open Positions: %d\n", len(positions))
 				fmt.Println("------------------------")
-				for i, pos := range netPos {
+				for i, pos := range positions {
 					if position, ok := pos.(map[string]interface{}); ok {
-						fmt.Printf("%d. %v | Qty: %v | Product: %v | Avg Price: %v\n",
+						fmt.Printf("%d. %v | Exchange: %v | Qty: %v | Product: %v | Avg Price: %v\n",
 							i+1,
 							position["symbol"],
+							position["exchange"],
 							position["quantity"],
 							position["product"],
 							position["average_price"])
@@ -159,6 +160,8 @@ func main() {
 			} else {
 				fmt.Println("No open positions")
 			}
+		} else {
+			fmt.Println("No open positions")
 		}
 	}
 
