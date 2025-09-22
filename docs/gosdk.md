@@ -25,8 +25,14 @@ import (
 
 // Replace 'your_api_key_here' with your actual API key
 // Specify the host URL with your hosted domain or ngrok domain.
-// If running locally in windows then use the default host value.
-client := openalgo.NewClient("your_api_key_here", "http://127.0.0.1:5000")
+// If running locally then use the default host value.
+// Parameters: apiKey, host, version, websocketURL (optional)
+client := openalgo.NewClient(
+    "your_api_key_here",
+    "http://127.0.0.1:5000",
+    "v1",                    // API version
+    "ws://127.0.0.1:8765",   // WebSocket URL (optional)
+)
 
 ```
 
@@ -74,7 +80,7 @@ fmt.Printf("OpenAlgo Go SDK Version: %s\n", openalgo.Version)
 #### Utility
 - `Ping` - Check API connectivity
 - `AnalyzerStatus` - Get analyzer status
-- `AnalyzerToggle` - Toggle analyzer mode
+- `AnalyzerToggle` - Toggle analyzer mode (requires boolean: true to enable, false to disable)
 
 #### WebSocket Streaming
 - `Connect` - Connect to WebSocket
@@ -114,7 +120,7 @@ To place a new market order:
 
 ```go
 response, err := client.PlaceOrder(
-    "Python",    // strategy
+    "GO Strategy", // strategy
     "NHPC",      // symbol
     "BUY",       // action
     "NSE",       // exchange
@@ -138,7 +144,7 @@ To place a new limit order:
 
 ```go
 response, err := client.PlaceOrder(
-    "Python",    // strategy
+    "GO Strategy", // strategy
     "YESBANK",   // symbol
     "BUY",       // action
     "NSE",       // exchange
@@ -169,7 +175,7 @@ To place a smart order considering the current position size:
 
 ```go
 response, err := client.PlaceSmartOrder(
-    "Python",      // strategy
+    "GO Strategy", // strategy
     "TATAMOTORS",  // symbol
     "SELL",        // action
     "NSE",         // exchange
@@ -195,25 +201,25 @@ fmt.Printf("%v\n", response)
 To place a new basket order:
 
 ```go
-basketOrders := []openalgo.BasketOrderItem{
+basketOrders := []map[string]interface{}{
     {
-        Symbol:    "BHEL",
-        Exchange:  "NSE",
-        Action:    "BUY",
-        Quantity:  1,
-        PriceType: "MARKET",
-        Product:   "MIS",
+        "symbol":    "BHEL",
+        "exchange":  "NSE",
+        "action":    "BUY",
+        "quantity":  1,
+        "pricetype": "MARKET",
+        "product":   "MIS",
     },
     {
-        Symbol:    "ZOMATO",
-        Exchange:  "NSE",
-        Action:    "SELL",
-        Quantity:  1,
-        PriceType: "MARKET",
-        Product:   "MIS",
+        "symbol":    "ZOMATO",
+        "exchange":  "NSE",
+        "action":    "SELL",
+        "quantity":  1,
+        "pricetype": "MARKET",
+        "product":   "MIS",
     },
 }
-response, err := client.BasketOrder(basketOrders)
+response, err := client.BasketOrder("GO Strategy", basketOrders)
 if err != nil {
     log.Printf("Error: %v", err)
 }
@@ -246,6 +252,7 @@ To place a new split order:
 
 ```go
 response, err := client.SplitOrder(
+    "GO Strategy", // strategy
     "YESBANK",   // symbol
     "NSE",       // exchange
     "SELL",      // action
@@ -315,16 +322,16 @@ To modify an existing order:
 ```go
 response, err := client.ModifyOrder(
     "250408001002736", // order_id
-    "Python",          // strategy
+    "GO Strategy",     // strategy
     "YESBANK",         // symbol
     "BUY",             // action
     "NSE",             // exchange
     "LIMIT",           // price_type
     "CNC",             // product
     1,                 // quantity
-    map[string]interface{}{
-        "price": 16.5,
-    },
+    "16.5",            // price
+    "0",               // disclosed_quantity
+    "0",               // trigger_price
 )
 if err != nil {
     log.Printf("Error: %v", err)
@@ -345,7 +352,7 @@ To cancel an existing order:
 ```go
 response, err := client.CancelOrder(
     "250408001002736", // order_id
-    "Python",          // strategy
+    "GO Strategy",     // strategy
 )
 if err != nil {
     log.Printf("Error: %v", err)
@@ -364,7 +371,7 @@ fmt.Printf("%v\n", response)
 To cancel all open orders and trigger pending orders:
 
 ```go
-response, err := client.CancelAllOrder("Python")
+response, err := client.CancelAllOrder("GO Strategy")
 if err != nil {
     log.Printf("Error: %v", err)
 }
@@ -393,7 +400,7 @@ fmt.Printf("%v\n", response)
 To close all open positions across various exchanges:
 
 ```go
-response, err := client.ClosePosition("Python")
+response, err := client.ClosePosition("GO Strategy")
 if err != nil {
     log.Printf("Error: %v", err)
 }
@@ -413,7 +420,7 @@ To Get the Current OrderStatus:
 ```go
 response, err := client.OrderStatus(
     "250408000989443", // order_id
-    "Test Strategy",   // strategy
+    "GO Strategy",     // strategy
 )
 if err != nil {
     log.Printf("Error: %v", err)
@@ -448,7 +455,7 @@ To Get the Current OpenPosition:
 
 ```go
 response, err := client.OpenPosition(
-    "Test Strategy", // strategy
+    "GO Strategy",   // strategy
     "YESBANK",       // symbol
     "NSE",           // exchange
     "MIS",           // product
@@ -1048,7 +1055,8 @@ func main() {
     client := openalgo.NewClient(
         "your_api_key",           // Replace with your actual OpenAlgo API key
         "http://127.0.0.1:5000",  // REST API host
-        "ws://127.0.0.1:8765",    // WebSocket host
+        "v1",                     // API version
+        "ws://127.0.0.1:8765",    // WebSocket host (optional)
     )
 
     // Connect to WebSocket
@@ -1099,7 +1107,8 @@ func main() {
     client := openalgo.NewClient(
         "your_api_key",           // Replace with your actual OpenAlgo API key
         "http://127.0.0.1:5000",  // REST API host
-        "ws://127.0.0.1:8765",    // WebSocket host
+        "v1",                     // API version
+        "ws://127.0.0.1:8765",    // WebSocket host (optional)
     )
 
     // Connect
@@ -1150,7 +1159,8 @@ func main() {
     client := openalgo.NewClient(
         "your_api_key",           // Replace with your actual OpenAlgo API key
         "http://127.0.0.1:5000",  // REST API host
-        "ws://127.0.0.1:8765",    // WebSocket host
+        "v1",                     // API version
+        "ws://127.0.0.1:8765",    // WebSocket host (optional)
     )
 
     // Connect

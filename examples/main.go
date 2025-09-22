@@ -24,7 +24,7 @@ func main() {
 
 	// PlaceOrder example - Market Order
 	marketOrderResp, err := client.PlaceOrder(
-		"Python",    // strategy
+		"GO Strategy", // strategy
 		"NHPC",      // symbol
 		"BUY",       // action
 		"NSE",       // exchange
@@ -40,7 +40,7 @@ func main() {
 
 	// PlaceOrder example - Limit Order with optional parameters
 	limitOrderResp, err := client.PlaceOrder(
-		"Python",    // strategy
+		"GO Strategy", // strategy
 		"YESBANK",   // symbol
 		"BUY",       // action
 		"NSE",       // exchange
@@ -61,7 +61,7 @@ func main() {
 
 	// PlaceSmartOrder example
 	smartOrderResp, err := client.PlaceSmartOrder(
-		"Python",      // strategy
+		"GO Strategy", // strategy
 		"TATAMOTORS",  // symbol
 		"SELL",        // action
 		"NSE",         // exchange
@@ -95,7 +95,7 @@ func main() {
 			"product":   "MIS",
 		},
 	}
-	basketResp, err := client.BasketOrder("Python", basketOrders)
+	basketResp, err := client.BasketOrder("GO Strategy", basketOrders)
 	if err != nil {
 		log.Printf("Error placing basket order: %v", err)
 	} else {
@@ -104,7 +104,7 @@ func main() {
 
 	// SplitOrder example
 	splitResp, err := client.SplitOrder(
-		"Python",    // strategy
+		"GO Strategy", // strategy
 		"YESBANK",   // symbol
 		"NSE",       // exchange
 		"SELL",      // action
@@ -122,7 +122,7 @@ func main() {
 	// ModifyOrder example
 	modifyResp, err := client.ModifyOrder(
 		"250408001002736", // order_id
-		"Python",          // strategy
+		"GO Strategy",     // strategy
 		"YESBANK",         // symbol
 		"BUY",             // action
 		"NSE",             // exchange
@@ -142,7 +142,7 @@ func main() {
 	// CancelOrder example
 	cancelResp, err := client.CancelOrder(
 		"250408001002736", // order_id
-		"Python",          // strategy
+		"GO Strategy",     // strategy
 	)
 	if err != nil {
 		log.Printf("Error canceling order: %v", err)
@@ -151,7 +151,7 @@ func main() {
 	}
 
 	// CancelAllOrder example
-	cancelAllResp, err := client.CancelAllOrder("Python")
+	cancelAllResp, err := client.CancelAllOrder("GO Strategy")
 	if err != nil {
 		log.Printf("Error canceling all orders: %v", err)
 	} else {
@@ -159,7 +159,7 @@ func main() {
 	}
 
 	// ClosePosition example
-	closeResp, err := client.ClosePosition("Python")
+	closeResp, err := client.ClosePosition("GO Strategy")
 	if err != nil {
 		log.Printf("Error closing positions: %v", err)
 	} else {

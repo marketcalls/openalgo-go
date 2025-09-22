@@ -34,7 +34,7 @@ func main() {
 	// 2. Place Market Order for NHPC
 	fmt.Println("\n=== 2. PLACE MARKET ORDER (NHPC) ===")
 	marketOrder, err := client.PlaceOrder(
-		"Python", // strategy
+		"GO Strategy", // strategy
 		"NHPC",   // symbol
 		"BUY",    // action
 		"NSE",    // exchange

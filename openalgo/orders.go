@@ -8,7 +8,7 @@ import (
 func (c *Client) PlaceOrder(strategy, symbol, action, exchange, priceType, product string, quantity interface{}, optionalParams ...map[string]interface{}) (map[string]interface{}, error) {
 	// Set defaults
 	if strategy == "" {
-		strategy = "Python"
+		strategy = "GO Strategy"
 	}
 	if priceType == "" {
 		priceType = "MARKET"
@@ -66,7 +66,7 @@ func (c *Client) PlaceOrder(strategy, symbol, action, exchange, priceType, produ
 func (c *Client) PlaceSmartOrder(strategy, symbol, action, exchange, priceType, product string, quantity interface{}, positionSize interface{}, optionalParams ...map[string]interface{}) (map[string]interface{}, error) {
 	// Set defaults
 	if strategy == "" {
-		strategy = "Python"
+		strategy = "GO Strategy"
 	}
 	if priceType == "" {
 		priceType = "MARKET"
@@ -134,7 +134,7 @@ func (c *Client) PlaceSmartOrder(strategy, symbol, action, exchange, priceType, 
 // BasketOrder places multiple orders at once
 func (c *Client) BasketOrder(strategy string, orders []map[string]interface{}) (map[string]interface{}, error) {
 	if strategy == "" {
-		strategy = "Python"
+		strategy = "GO Strategy"
 	}
 
 	// Process orders to ensure all numeric values are strings
@@ -167,7 +167,7 @@ func (c *Client) BasketOrder(strategy string, orders []map[string]interface{}) (
 func (c *Client) SplitOrder(strategy, symbol, exchange, action string, quantity, splitSize interface{}, priceType, product string, optionalParams ...map[string]interface{}) (map[string]interface{}, error) {
 	// Set defaults
 	if strategy == "" {
-		strategy = "Python"
+		strategy = "GO Strategy"
 	}
 	if priceType == "" {
 		priceType = "MARKET"
@@ -236,7 +236,7 @@ func (c *Client) SplitOrder(strategy, symbol, exchange, action string, quantity,
 func (c *Client) ModifyOrder(orderID, strategy, symbol, action, exchange, priceType, product string, quantity interface{}, price, disclosedQuantity, triggerPrice string) (map[string]interface{}, error) {
 	// Set defaults
 	if strategy == "" {
-		strategy = "Python"
+		strategy = "GO Strategy"
 	}
 	if priceType == "" {
 		priceType = "LIMIT"
@@ -280,7 +280,7 @@ func (c *Client) ModifyOrder(orderID, strategy, symbol, action, exchange, priceT
 // CancelOrder cancels an existing order
 func (c *Client) CancelOrder(orderID, strategy string) (map[string]interface{}, error) {
 	if strategy == "" {
-		strategy = "Python"
+		strategy = "GO Strategy"
 	}
 
 	payload := map[string]interface{}{
@@ -295,7 +295,7 @@ func (c *Client) CancelOrder(orderID, strategy string) (map[string]interface{}, 
 // CancelAllOrder cancels all orders for a strategy
 func (c *Client) CancelAllOrder(strategy string) (map[string]interface{}, error) {
 	if strategy == "" {
-		strategy = "Python"
+		strategy = "GO Strategy"
 	}
 
 	payload := map[string]interface{}{
@@ -309,7 +309,7 @@ func (c *Client) CancelAllOrder(strategy string) (map[string]interface{}, error)
 // ClosePosition closes all open positions for a strategy
 func (c *Client) ClosePosition(strategy string) (map[string]interface{}, error) {
 	if strategy == "" {
-		strategy = "Python"
+		strategy = "GO Strategy"
 	}
 
 	payload := map[string]interface{}{
@@ -323,7 +323,7 @@ func (c *Client) ClosePosition(strategy string) (map[string]interface{}, error) 
 // OrderStatus gets the status of an order
 func (c *Client) OrderStatus(orderID, strategy string) (map[string]interface{}, error) {
 	if strategy == "" {
-		strategy = "Python"
+		strategy = "GO Strategy"
 	}
 
 	payload := map[string]interface{}{
@@ -338,7 +338,7 @@ func (c *Client) OrderStatus(orderID, strategy string) (map[string]interface{}, 
 // OpenPosition gets the open position for a symbol
 func (c *Client) OpenPosition(strategy, symbol, exchange, product string) (map[string]interface{}, error) {
 	if strategy == "" {
-		strategy = "Python"
+		strategy = "GO Strategy"
 	}
 
 	payload := map[string]interface{}{
