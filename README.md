@@ -1,24 +1,70 @@
 # OpenAlgo Go SDK
 
-Go SDK for OpenAlgo trading platform.
+Official Go SDK for [OpenAlgo](https://openalgo.in) - the open source algorithmic trading platform.
 
 ## Installation
 
+### Method 1: Install in your project
+
 ```bash
+# Create a new project directory
+mkdir my-trading-app
+cd my-trading-app
+
+# Initialize Go module
+go mod init my-trading-app
+
+# Install OpenAlgo Go SDK
 go get github.com/marketcalls/openalgo-go
+
+# Clean up dependencies
+go mod tidy
 ```
 
-## Getting Started
+### Method 2: Clone from GitHub
 
-First, import the OpenAlgo package and initialize it with your API key:
+```bash
+# Clone the repository
+git clone https://github.com/marketcalls/openalgo-go.git
+cd openalgo-go
+
+# Install dependencies
+go mod download
+
+# Clean up dependencies
+go mod tidy
+
+# Run the example
+go run example.go
+```
+
+## Quick Start
 
 ```go
-import "github.com/marketcalls/openalgo-go/openalgo"
+package main
 
-// Replace 'your_api_key_here' with your actual API key
-// Specify the host URL with your hosted domain or ngrok domain
-// If running locally in windows then use the default host value
-client := openalgo.NewClient("your_api_key_here", "http://127.0.0.1:5000")
+import (
+    "fmt"
+    "log"
+    "github.com/marketcalls/openalgo-go/openalgo"
+)
+
+func main() {
+    // Initialize the client
+    client := openalgo.NewClient(
+        "YOUR_API_KEY",          // Your OpenAlgo API key
+        "http://127.0.0.1:5000", // OpenAlgo server URL
+        "v1",                    // API version
+        "ws://127.0.0.1:8765",   // WebSocket URL (optional)
+    )
+
+    // Fetch account funds
+    funds, err := client.Funds()
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("Funds: %+v\n", funds)
+}
 ```
 
 ## Check OpenAlgo Version
@@ -77,9 +123,22 @@ fmt.Printf("Version: %s\n", openalgo.Version)
 - `SubscribeDepth` - Subscribe to market depth
 - `UnsubscribeDepth` - Unsubscribe from depth
 
-## Examples
+## Running the Example
 
-See the `examples/main.go` file for detailed usage examples of all functions.
+1. Update `example.go` with your API key:
+```go
+client := openalgo.NewClient(
+    "YOUR_API_KEY",          // Replace with your actual API key
+    "http://127.0.0.1:5000", // Your OpenAlgo server URL
+    "v1",                    // API version
+    "ws://127.0.0.1:8765",   // WebSocket URL (optional)
+)
+```
+
+2. Run the example:
+```bash
+go run example.go
+```
 
 ## Function Parameters
 
