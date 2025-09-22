@@ -33,9 +33,9 @@ func NewClient(apiKey string, host string, optionalArgs ...interface{}) *Client 
 	for i, arg := range optionalArgs {
 		switch v := arg.(type) {
 		case string:
-			if i == 0 {
+			if i == 0 && v != "" {
 				version = v
-			} else {
+			} else if i > 0 && v != "" {
 				wsURL = v
 			}
 		case int:
