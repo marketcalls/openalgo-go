@@ -11,7 +11,7 @@ import (
 func main() {
 	// Initialize OpenAlgo client with provided API key
 	client := openalgo.NewClient(
-		"3fa0620b435555c2c73720872288b626be96103a02edcb95e8ad864ee160b343", // API Key
+		"openalgo-api-key",      // API Key
 		"http://127.0.0.1:5000", // Host URL
 		"v1",                    // API Version
 		"ws://127.0.0.1:8765",   // WebSocket URL
