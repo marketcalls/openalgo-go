@@ -77,25 +77,25 @@ func main() {
 	}
 
 	// BasketOrder example
-	basketOrders := []openalgo.BasketOrderItem{
+	basketOrders := []map[string]interface{}{
 		{
-			Symbol:    "BHEL",
-			Exchange:  "NSE",
-			Action:    "BUY",
-			Quantity:  1,
-			PriceType: "MARKET",
-			Product:   "MIS",
+			"symbol":    "BHEL",
+			"exchange":  "NSE",
+			"action":    "BUY",
+			"quantity":  1,
+			"pricetype": "MARKET",
+			"product":   "MIS",
 		},
 		{
-			Symbol:    "ZOMATO",
-			Exchange:  "NSE",
-			Action:    "SELL",
-			Quantity:  1,
-			PriceType: "MARKET",
-			Product:   "MIS",
+			"symbol":    "ZOMATO",
+			"exchange":  "NSE",
+			"action":    "SELL",
+			"quantity":  1,
+			"pricetype": "MARKET",
+			"product":   "MIS",
 		},
 	}
-	basketResp, err := client.BasketOrder(basketOrders)
+	basketResp, err := client.BasketOrder("Python", basketOrders)
 	if err != nil {
 		log.Printf("Error placing basket order: %v", err)
 	} else {
@@ -104,6 +104,7 @@ func main() {
 
 	// SplitOrder example
 	splitResp, err := client.SplitOrder(
+		"Python",    // strategy
 		"YESBANK",   // symbol
 		"NSE",       // exchange
 		"SELL",      // action
@@ -128,9 +129,9 @@ func main() {
 		"LIMIT",           // price_type
 		"CNC",             // product
 		1,                 // quantity
-		map[string]interface{}{
-			"price": 16.5,
-		},
+		"16.5",            // price (required)
+		"0",               // disclosed_quantity (required)
+		"0",               // trigger_price (required)
 	)
 	if err != nil {
 		log.Printf("Error modifying order: %v", err)

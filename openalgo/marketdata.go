@@ -91,7 +91,7 @@ func (c *Client) Quotes(symbol, exchange string) (map[string]interface{}, error)
 		"symbol":   symbol,
 		"exchange": exchange,
 	}
-	return c.makeRequest("POST", "/quotes", payload)
+	return c.makeRequest("POST", "quotes", payload)
 }
 
 func (c *Client) Depth(symbol, exchange string) (map[string]interface{}, error) {
@@ -100,7 +100,7 @@ func (c *Client) Depth(symbol, exchange string) (map[string]interface{}, error) 
 		"symbol":   symbol,
 		"exchange": exchange,
 	}
-	return c.makeRequest("POST", "/depth", payload)
+	return c.makeRequest("POST", "depth", payload)
 }
 
 func (c *Client) History(symbol, exchange, interval, startDate, endDate string) (map[string]interface{}, error) {
@@ -112,14 +112,14 @@ func (c *Client) History(symbol, exchange, interval, startDate, endDate string) 
 		"start_date": startDate,
 		"end_date":   endDate,
 	}
-	return c.makeRequest("POST", "/history", payload)
+	return c.makeRequest("POST", "history", payload)
 }
 
 func (c *Client) Intervals() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "/intervals", payload)
+	return c.makeRequest("POST", "intervals", payload)
 }
 
 func (c *Client) Symbol(symbol, exchange string) (map[string]interface{}, error) {
@@ -128,7 +128,7 @@ func (c *Client) Symbol(symbol, exchange string) (map[string]interface{}, error)
 		"symbol":   symbol,
 		"exchange": exchange,
 	}
-	return c.makeRequest("POST", "/symbol", payload)
+	return c.makeRequest("POST", "symbol", payload)
 }
 
 func (c *Client) Search(query, exchange string) (map[string]interface{}, error) {
@@ -139,7 +139,7 @@ func (c *Client) Search(query, exchange string) (map[string]interface{}, error) 
 	if exchange != "" {
 		payload["exchange"] = exchange
 	}
-	return c.makeRequest("POST", "/search", payload)
+	return c.makeRequest("POST", "search", payload)
 }
 
 func (c *Client) Expiry(symbol, exchange, instrumentType string) (map[string]interface{}, error) {
@@ -149,5 +149,5 @@ func (c *Client) Expiry(symbol, exchange, instrumentType string) (map[string]int
 		"exchange":       exchange,
 		"instrumenttype": instrumentType,
 	}
-	return c.makeRequest("POST", "/expiry", payload)
+	return c.makeRequest("POST", "expiry", payload)
 }

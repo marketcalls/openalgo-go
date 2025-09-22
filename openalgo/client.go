@@ -46,7 +46,7 @@ func NewClient(apiKey string, host string, optionalArgs ...interface{}) *Client 
 	c := &Client{
 		apiKey:    apiKey,
 		host:      host,
-		baseURL:   fmt.Sprintf("%s/api/%s", host, version),
+		baseURL:   fmt.Sprintf("%s/api/%s/", host, version),
 		wsPort:    wsPort,
 		client:    &http.Client{Timeout: 30 * time.Second},
 		callbacks: make(map[string]func(interface{})),

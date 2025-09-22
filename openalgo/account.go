@@ -89,33 +89,33 @@ func (c *Client) Funds() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "/funds", payload)
+	return c.makeRequest("POST", "funds", payload)
 }
 
 func (c *Client) OrderBook() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "/orderbook", payload)
+	return c.makeRequest("POST", "orderbook", payload)
 }
 
 func (c *Client) TradeBook() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "/tradebook", payload)
+	return c.makeRequest("POST", "tradebook", payload)
 }
 
 func (c *Client) PositionBook() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "/positionbook", payload)
+	return c.makeRequest("POST", "positionbook", payload)
 }
 
 func (c *Client) Holdings() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "/holdings", payload)
+	return c.makeRequest("POST", "holdings", payload)
 }

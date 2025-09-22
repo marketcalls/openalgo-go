@@ -4,289 +4,350 @@ import (
 	"fmt"
 )
 
-type PlaceOrderRequest struct {
-	Strategy           string  `json:"strategy"`
-	Symbol             string  `json:"symbol"`
-	Action             string  `json:"action"`
-	Exchange           string  `json:"exchange"`
-	PriceType          string  `json:"pricetype"`
-	Product            string  `json:"product"`
-	Quantity           string  `json:"quantity"`
-	Price              float64 `json:"price,omitempty"`
-	TriggerPrice       float64 `json:"trigger_price,omitempty"`
-	DisclosedQuantity  string  `json:"disclosed_quantity,omitempty"`
-}
-
-type PlaceSmartOrderRequest struct {
-	Strategy      string  `json:"strategy"`
-	Symbol        string  `json:"symbol"`
-	Action        string  `json:"action"`
-	Exchange      string  `json:"exchange"`
-	PriceType     string  `json:"pricetype"`
-	Product       string  `json:"product"`
-	Quantity      string  `json:"quantity"`
-	PositionSize  int     `json:"position_size"`
-	Price         float64 `json:"price,omitempty"`
-	TriggerPrice  float64 `json:"trigger_price,omitempty"`
-	DisclosedQuantity string `json:"disclosed_quantity,omitempty"`
-}
-
-type BasketOrderItem struct {
-	Symbol        string  `json:"symbol"`
-	Exchange      string  `json:"exchange"`
-	Action        string  `json:"action"`
-	Quantity      int     `json:"quantity"`
-	PriceType     string  `json:"pricetype"`
-	Product       string  `json:"product"`
-	Price         float64 `json:"price,omitempty"`
-	TriggerPrice  float64 `json:"trigger_price,omitempty"`
-}
-
-type BasketOrderRequest struct {
-	Orders []BasketOrderItem `json:"orders"`
-}
-
-type SplitOrderRequest struct {
-	Symbol       string  `json:"symbol"`
-	Exchange     string  `json:"exchange"`
-	Action       string  `json:"action"`
-	Quantity     int     `json:"quantity"`
-	SplitSize    int     `json:"splitsize"`
-	PriceType    string  `json:"pricetype"`
-	Product      string  `json:"product"`
-	Price        float64 `json:"price,omitempty"`
-	TriggerPrice float64 `json:"trigger_price,omitempty"`
-}
-
-type ModifyOrderRequest struct {
-	OrderID           string  `json:"orderid"`
-	Strategy          string  `json:"strategy"`
-	Symbol            string  `json:"symbol"`
-	Action            string  `json:"action"`
-	Exchange          string  `json:"exchange"`
-	PriceType         string  `json:"pricetype"`
-	Product           string  `json:"product"`
-	Quantity          string  `json:"quantity"`
-	Price             float64 `json:"price,omitempty"`
-	TriggerPrice      float64 `json:"trigger_price,omitempty"`
-	DisclosedQuantity string  `json:"disclosed_quantity,omitempty"`
-}
-
-type CancelOrderRequest struct {
-	OrderID  string `json:"orderid"`
-	Strategy string `json:"strategy"`
-}
-
-type CancelAllOrderRequest struct {
-	Strategy string `json:"strategy"`
-}
-
-type ClosePositionRequest struct {
-	Strategy string `json:"strategy"`
-}
-
-type OrderStatusRequest struct {
-	OrderID  string `json:"orderid"`
-	Strategy string `json:"strategy"`
-}
-
-type OpenPositionRequest struct {
-	Strategy string `json:"strategy"`
-	Symbol   string `json:"symbol"`
-	Exchange string `json:"exchange"`
-	Product  string `json:"product"`
-}
-
+// PlaceOrder places a new order
 func (c *Client) PlaceOrder(strategy, symbol, action, exchange, priceType, product string, quantity interface{}, optionalParams ...map[string]interface{}) (map[string]interface{}, error) {
-	req := PlaceOrderRequest{
-		Strategy:  strategy,
-		Symbol:    symbol,
-		Action:    action,
-		Exchange:  exchange,
-		PriceType: priceType,
-		Product:   product,
+	// Set defaults
+	if strategy == "" {
+		strategy = "Python"
+	}
+	if priceType == "" {
+		priceType = "MARKET"
+	}
+	if product == "" {
+		product = "MIS"
 	}
 
+	payload := map[string]interface{}{
+		"apikey":    c.apiKey,
+		"strategy":  strategy,
+		"symbol":    symbol,
+		"action":    action,
+		"exchange":  exchange,
+		"pricetype": priceType,
+		"product":   product,
+	}
+
+	// Convert quantity to string
 	switch v := quantity.(type) {
 	case string:
-		req.Quantity = v
+		payload["quantity"] = v
 	case int:
-		req.Quantity = fmt.Sprintf("%d", v)
+		payload["quantity"] = fmt.Sprintf("%d", v)
 	case float64:
-		req.Quantity = fmt.Sprintf("%.0f", v)
+		payload["quantity"] = fmt.Sprintf("%.0f", v)
 	default:
-		return nil, fmt.Errorf("quantity must be string, int, or float64")
+		payload["quantity"] = "1"
 	}
 
+	// Add optional parameters
 	if len(optionalParams) > 0 {
 		params := optionalParams[0]
-		if price, ok := params["price"].(float64); ok {
-			req.Price = price
-		} else if price, ok := params["price"].(string); ok {
-			var p float64
-			fmt.Sscanf(price, "%f", &p)
-			req.Price = p
-		}
-
-		if triggerPrice, ok := params["trigger_price"].(float64); ok {
-			req.TriggerPrice = triggerPrice
-		} else if triggerPrice, ok := params["trigger_price"].(string); ok {
-			var tp float64
-			fmt.Sscanf(triggerPrice, "%f", &tp)
-			req.TriggerPrice = tp
-		}
-
-		if disclosedQty, ok := params["disclosed_quantity"].(string); ok {
-			req.DisclosedQuantity = disclosedQty
+		for key, value := range params {
+			if value != nil {
+				// Convert all values to strings
+				switch v := value.(type) {
+				case string:
+					payload[key] = v
+				case int:
+					payload[key] = fmt.Sprintf("%d", v)
+				case float64:
+					payload[key] = fmt.Sprintf("%g", v)
+				default:
+					payload[key] = fmt.Sprintf("%v", v)
+				}
+			}
 		}
 	}
 
-	return c.makeRequest("POST", "/api/v1/placeorder", req)
+	return c.makeRequest("POST", "placeorder", payload)
 }
 
-func (c *Client) PlaceSmartOrder(strategy, symbol, action, exchange, priceType, product string, quantity interface{}, positionSize int, optionalParams ...map[string]interface{}) (map[string]interface{}, error) {
-	req := PlaceSmartOrderRequest{
-		Strategy:     strategy,
-		Symbol:       symbol,
-		Action:       action,
-		Exchange:     exchange,
-		PriceType:    priceType,
-		Product:      product,
-		PositionSize: positionSize,
+// PlaceSmartOrder places a smart order considering position size
+func (c *Client) PlaceSmartOrder(strategy, symbol, action, exchange, priceType, product string, quantity interface{}, positionSize interface{}, optionalParams ...map[string]interface{}) (map[string]interface{}, error) {
+	// Set defaults
+	if strategy == "" {
+		strategy = "Python"
+	}
+	if priceType == "" {
+		priceType = "MARKET"
+	}
+	if product == "" {
+		product = "MIS"
 	}
 
+	payload := map[string]interface{}{
+		"apikey":    c.apiKey,
+		"strategy":  strategy,
+		"symbol":    symbol,
+		"action":    action,
+		"exchange":  exchange,
+		"pricetype": priceType,
+		"product":   product,
+	}
+
+	// Convert quantity to string
 	switch v := quantity.(type) {
 	case string:
-		req.Quantity = v
+		payload["quantity"] = v
 	case int:
-		req.Quantity = fmt.Sprintf("%d", v)
+		payload["quantity"] = fmt.Sprintf("%d", v)
 	case float64:
-		req.Quantity = fmt.Sprintf("%.0f", v)
+		payload["quantity"] = fmt.Sprintf("%.0f", v)
 	default:
-		return nil, fmt.Errorf("quantity must be string, int, or float64")
+		payload["quantity"] = "1"
 	}
 
+	// Convert position_size to string
+	switch v := positionSize.(type) {
+	case string:
+		payload["position_size"] = v
+	case int:
+		payload["position_size"] = fmt.Sprintf("%d", v)
+	case float64:
+		payload["position_size"] = fmt.Sprintf("%.0f", v)
+	default:
+		return nil, fmt.Errorf("position_size is required")
+	}
+
+	// Add optional parameters
 	if len(optionalParams) > 0 {
 		params := optionalParams[0]
-		if price, ok := params["price"].(float64); ok {
-			req.Price = price
-		}
-		if triggerPrice, ok := params["trigger_price"].(float64); ok {
-			req.TriggerPrice = triggerPrice
-		}
-		if disclosedQty, ok := params["disclosed_quantity"].(string); ok {
-			req.DisclosedQuantity = disclosedQty
+		for key, value := range params {
+			if value != nil {
+				switch v := value.(type) {
+				case string:
+					payload[key] = v
+				case int:
+					payload[key] = fmt.Sprintf("%d", v)
+				case float64:
+					payload[key] = fmt.Sprintf("%g", v)
+				default:
+					payload[key] = fmt.Sprintf("%v", v)
+				}
+			}
 		}
 	}
 
-	return c.makeRequest("POST", "/api/v1/placesmartorder", req)
+	return c.makeRequest("POST", "placesmartorder", payload)
 }
 
-func (c *Client) BasketOrder(orders []BasketOrderItem) (map[string]interface{}, error) {
-	req := BasketOrderRequest{
-		Orders: orders,
+// BasketOrder places multiple orders at once
+func (c *Client) BasketOrder(strategy string, orders []map[string]interface{}) (map[string]interface{}, error) {
+	if strategy == "" {
+		strategy = "Python"
 	}
-	return c.makeRequest("POST", "/api/v1/basketorder", req)
+
+	// Process orders to ensure all numeric values are strings
+	processedOrders := make([]map[string]interface{}, len(orders))
+	for i, order := range orders {
+		processedOrder := make(map[string]interface{})
+		for key, value := range order {
+			switch v := value.(type) {
+			case int:
+				processedOrder[key] = fmt.Sprintf("%d", v)
+			case float64:
+				processedOrder[key] = fmt.Sprintf("%g", v)
+			default:
+				processedOrder[key] = v
+			}
+		}
+		processedOrders[i] = processedOrder
+	}
+
+	payload := map[string]interface{}{
+		"apikey":   c.apiKey,
+		"strategy": strategy,
+		"orders":   processedOrders,
+	}
+
+	return c.makeRequest("POST", "basketorder", payload)
 }
 
-func (c *Client) SplitOrder(symbol, exchange, action string, quantity, splitSize int, priceType, product string, optionalParams ...map[string]interface{}) (map[string]interface{}, error) {
-	req := SplitOrderRequest{
-		Symbol:    symbol,
-		Exchange:  exchange,
-		Action:    action,
-		Quantity:  quantity,
-		SplitSize: splitSize,
-		PriceType: priceType,
-		Product:   product,
+// SplitOrder splits a large order into smaller orders
+func (c *Client) SplitOrder(strategy, symbol, exchange, action string, quantity, splitSize interface{}, priceType, product string, optionalParams ...map[string]interface{}) (map[string]interface{}, error) {
+	// Set defaults
+	if strategy == "" {
+		strategy = "Python"
+	}
+	if priceType == "" {
+		priceType = "MARKET"
+	}
+	if product == "" {
+		product = "MIS"
 	}
 
-	if len(optionalParams) > 0 {
-		params := optionalParams[0]
-		if price, ok := params["price"].(float64); ok {
-			req.Price = price
-		}
-		if triggerPrice, ok := params["trigger_price"].(float64); ok {
-			req.TriggerPrice = triggerPrice
-		}
+	payload := map[string]interface{}{
+		"apikey":    c.apiKey,
+		"strategy":  strategy,
+		"symbol":    symbol,
+		"action":    action,
+		"exchange":  exchange,
+		"pricetype": priceType,
+		"product":   product,
 	}
 
-	return c.makeRequest("POST", "/api/v1/splitorder", req)
-}
-
-func (c *Client) ModifyOrder(orderID, strategy, symbol, action, exchange, priceType, product string, quantity interface{}, optionalParams ...map[string]interface{}) (map[string]interface{}, error) {
-	req := ModifyOrderRequest{
-		OrderID:   orderID,
-		Strategy:  strategy,
-		Symbol:    symbol,
-		Action:    action,
-		Exchange:  exchange,
-		PriceType: priceType,
-		Product:   product,
-	}
-
+	// Convert quantity to string
 	switch v := quantity.(type) {
 	case string:
-		req.Quantity = v
+		payload["quantity"] = v
 	case int:
-		req.Quantity = fmt.Sprintf("%d", v)
+		payload["quantity"] = fmt.Sprintf("%d", v)
 	case float64:
-		req.Quantity = fmt.Sprintf("%.0f", v)
+		payload["quantity"] = fmt.Sprintf("%.0f", v)
 	default:
-		return nil, fmt.Errorf("quantity must be string, int, or float64")
+		return nil, fmt.Errorf("quantity is required")
 	}
 
+	// Convert splitsize to string
+	switch v := splitSize.(type) {
+	case string:
+		payload["splitsize"] = v
+	case int:
+		payload["splitsize"] = fmt.Sprintf("%d", v)
+	case float64:
+		payload["splitsize"] = fmt.Sprintf("%.0f", v)
+	default:
+		return nil, fmt.Errorf("splitsize is required")
+	}
+
+	// Add optional parameters
 	if len(optionalParams) > 0 {
 		params := optionalParams[0]
-		if price, ok := params["price"].(float64); ok {
-			req.Price = price
-		}
-		if triggerPrice, ok := params["trigger_price"].(float64); ok {
-			req.TriggerPrice = triggerPrice
-		}
-		if disclosedQty, ok := params["disclosed_quantity"].(string); ok {
-			req.DisclosedQuantity = disclosedQty
+		for key, value := range params {
+			if value != nil {
+				switch v := value.(type) {
+				case string:
+					payload[key] = v
+				case int:
+					payload[key] = fmt.Sprintf("%d", v)
+				case float64:
+					payload[key] = fmt.Sprintf("%g", v)
+				default:
+					payload[key] = fmt.Sprintf("%v", v)
+				}
+			}
 		}
 	}
 
-	return c.makeRequest("POST", "/api/v1/modifyorder", req)
+	return c.makeRequest("POST", "splitorder", payload)
 }
 
+// ModifyOrder modifies an existing order
+func (c *Client) ModifyOrder(orderID, strategy, symbol, action, exchange, priceType, product string, quantity interface{}, price, disclosedQuantity, triggerPrice string) (map[string]interface{}, error) {
+	// Set defaults
+	if strategy == "" {
+		strategy = "Python"
+	}
+	if priceType == "" {
+		priceType = "LIMIT"
+	}
+	if disclosedQuantity == "" {
+		disclosedQuantity = "0"
+	}
+	if triggerPrice == "" {
+		triggerPrice = "0"
+	}
+
+	payload := map[string]interface{}{
+		"apikey":              c.apiKey,
+		"orderid":             orderID,
+		"strategy":            strategy,
+		"symbol":              symbol,
+		"action":              action,
+		"exchange":            exchange,
+		"pricetype":           priceType,
+		"product":             product,
+		"price":               price,
+		"disclosed_quantity":  disclosedQuantity,
+		"trigger_price":       triggerPrice,
+	}
+
+	// Convert quantity to string
+	switch v := quantity.(type) {
+	case string:
+		payload["quantity"] = v
+	case int:
+		payload["quantity"] = fmt.Sprintf("%d", v)
+	case float64:
+		payload["quantity"] = fmt.Sprintf("%.0f", v)
+	default:
+		return nil, fmt.Errorf("quantity is required")
+	}
+
+	return c.makeRequest("POST", "modifyorder", payload)
+}
+
+// CancelOrder cancels an existing order
 func (c *Client) CancelOrder(orderID, strategy string) (map[string]interface{}, error) {
-	req := CancelOrderRequest{
-		OrderID:  orderID,
-		Strategy: strategy,
+	if strategy == "" {
+		strategy = "Python"
 	}
-	return c.makeRequest("POST", "/api/v1/cancelorder", req)
+
+	payload := map[string]interface{}{
+		"apikey":   c.apiKey,
+		"orderid":  orderID,
+		"strategy": strategy,
+	}
+
+	return c.makeRequest("POST", "cancelorder", payload)
 }
 
+// CancelAllOrder cancels all orders for a strategy
 func (c *Client) CancelAllOrder(strategy string) (map[string]interface{}, error) {
-	req := CancelAllOrderRequest{
-		Strategy: strategy,
+	if strategy == "" {
+		strategy = "Python"
 	}
-	return c.makeRequest("POST", "/api/v1/cancelallorder", req)
+
+	payload := map[string]interface{}{
+		"apikey":   c.apiKey,
+		"strategy": strategy,
+	}
+
+	return c.makeRequest("POST", "cancelallorder", payload)
 }
 
+// ClosePosition closes all open positions for a strategy
 func (c *Client) ClosePosition(strategy string) (map[string]interface{}, error) {
-	req := ClosePositionRequest{
-		Strategy: strategy,
+	if strategy == "" {
+		strategy = "Python"
 	}
-	return c.makeRequest("POST", "/api/v1/closeposition", req)
+
+	payload := map[string]interface{}{
+		"apikey":   c.apiKey,
+		"strategy": strategy,
+	}
+
+	return c.makeRequest("POST", "closeposition", payload)
 }
 
+// OrderStatus gets the status of an order
 func (c *Client) OrderStatus(orderID, strategy string) (map[string]interface{}, error) {
-	req := OrderStatusRequest{
-		OrderID:  orderID,
-		Strategy: strategy,
+	if strategy == "" {
+		strategy = "Python"
 	}
-	return c.makeRequest("POST", "/api/v1/orderstatus", req)
+
+	payload := map[string]interface{}{
+		"apikey":   c.apiKey,
+		"strategy": strategy,
+		"orderid":  orderID,
+	}
+
+	return c.makeRequest("POST", "orderstatus", payload)
 }
 
+// OpenPosition gets the open position for a symbol
 func (c *Client) OpenPosition(strategy, symbol, exchange, product string) (map[string]interface{}, error) {
-	req := OpenPositionRequest{
-		Strategy: strategy,
-		Symbol:   symbol,
-		Exchange: exchange,
-		Product:  product,
+	if strategy == "" {
+		strategy = "Python"
 	}
-	return c.makeRequest("POST", "/api/v1/openposition", req)
+
+	payload := map[string]interface{}{
+		"apikey":   c.apiKey,
+		"strategy": strategy,
+		"symbol":   symbol,
+		"exchange": exchange,
+		"product":  product,
+	}
+
+	return c.makeRequest("POST", "openposition", payload)
 }
