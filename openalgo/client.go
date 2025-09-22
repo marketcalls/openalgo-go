@@ -11,36 +11,74 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Client is the main OpenAlgo API client
 type Client struct {
 	apiKey    string
 	host      string
+	baseURL   string
 	wsURL     string
+	wsPort    int
 	client    *http.Client
 	wsConn    *websocket.Conn
 	callbacks map[string]func(interface{})
 }
 
-func NewClient(apiKey string, host string, wsURL ...string) *Client {
+// NewClient creates a new OpenAlgo API client
+func NewClient(apiKey string, host string, optionalArgs ...interface{}) *Client {
+	version := "v1"
+	wsPort := 8765
+	var wsURL string
+
+	// Parse optional arguments
+	for i, arg := range optionalArgs {
+		switch v := arg.(type) {
+		case string:
+			if i == 0 {
+				version = v
+			} else {
+				wsURL = v
+			}
+		case int:
+			wsPort = v
+		}
+	}
+
 	c := &Client{
 		apiKey:    apiKey,
 		host:      host,
+		baseURL:   fmt.Sprintf("%s/api/%s", host, version),
+		wsPort:    wsPort,
 		client:    &http.Client{Timeout: 30 * time.Second},
 		callbacks: make(map[string]func(interface{})),
 	}
 
-	if len(wsURL) > 0 {
-		c.wsURL = wsURL[0]
+	// Set WebSocket URL
+	if wsURL != "" {
+		c.wsURL = wsURL
+	} else {
+		// Extract host without protocol for WebSocket
+		wsHost := host
+		if len(host) > 7 && host[:7] == "http://" {
+			wsHost = host[7:]
+		} else if len(host) > 8 && host[:8] == "https://" {
+			wsHost = host[8:]
+		}
+		// Remove port if present
+		for i, ch := range wsHost {
+			if ch == ':' || ch == '/' {
+				wsHost = wsHost[:i]
+				break
+			}
+		}
+		c.wsURL = fmt.Sprintf("ws://%s:%d", wsHost, wsPort)
 	}
 
 	return c
 }
 
-func (c *Client) Ping() (map[string]interface{}, error) {
-	return c.makeRequest("GET", "/api/v1/ping", nil)
-}
-
+// makeRequest performs an HTTP request to the OpenAlgo API
 func (c *Client) makeRequest(method, endpoint string, payload interface{}) (map[string]interface{}, error) {
-	url := fmt.Sprintf("%s%s", c.host, endpoint)
+	url := fmt.Sprintf("%s%s", c.baseURL, endpoint)
 
 	var req *http.Request
 	var err error
@@ -54,7 +92,6 @@ func (c *Client) makeRequest(method, endpoint string, payload interface{}) (map[
 		if err != nil {
 			return nil, fmt.Errorf("failed to create request: %w", err)
 		}
-		req.Header.Set("Content-Type", "application/json")
 	} else {
 		req, err = http.NewRequest(method, url, nil)
 		if err != nil {
@@ -62,7 +99,7 @@ func (c *Client) makeRequest(method, endpoint string, payload interface{}) (map[
 		}
 	}
 
-	req.Header.Set("X-API-KEY", c.apiKey)
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.client.Do(req)
 	if err != nil {

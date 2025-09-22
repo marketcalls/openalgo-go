@@ -86,21 +86,36 @@ type HoldingsResponse struct {
 }
 
 func (c *Client) Funds() (map[string]interface{}, error) {
-	return c.makeRequest("GET", "/api/v1/funds", nil)
+	payload := map[string]interface{}{
+		"apikey": c.apiKey,
+	}
+	return c.makeRequest("POST", "/funds", payload)
 }
 
 func (c *Client) OrderBook() (map[string]interface{}, error) {
-	return c.makeRequest("GET", "/api/v1/orderbook", nil)
+	payload := map[string]interface{}{
+		"apikey": c.apiKey,
+	}
+	return c.makeRequest("POST", "/orderbook", payload)
 }
 
 func (c *Client) TradeBook() (map[string]interface{}, error) {
-	return c.makeRequest("GET", "/api/v1/tradebook", nil)
+	payload := map[string]interface{}{
+		"apikey": c.apiKey,
+	}
+	return c.makeRequest("POST", "/tradebook", payload)
 }
 
 func (c *Client) PositionBook() (map[string]interface{}, error) {
-	return c.makeRequest("GET", "/api/v1/positionbook", nil)
+	payload := map[string]interface{}{
+		"apikey": c.apiKey,
+	}
+	return c.makeRequest("POST", "/positionbook", payload)
 }
 
 func (c *Client) Holdings() (map[string]interface{}, error) {
-	return c.makeRequest("GET", "/api/v1/holdings", nil)
+	payload := map[string]interface{}{
+		"apikey": c.apiKey,
+	}
+	return c.makeRequest("POST", "/holdings", payload)
 }

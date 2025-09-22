@@ -86,57 +86,68 @@ type HistoryBar struct {
 }
 
 func (c *Client) Quotes(symbol, exchange string) (map[string]interface{}, error) {
-	req := QuotesRequest{
-		Symbol:   symbol,
-		Exchange: exchange,
+	payload := map[string]interface{}{
+		"apikey":   c.apiKey,
+		"symbol":   symbol,
+		"exchange": exchange,
 	}
-	return c.makeRequest("POST", "/api/v1/quotes", req)
+	return c.makeRequest("POST", "/quotes", payload)
 }
 
 func (c *Client) Depth(symbol, exchange string) (map[string]interface{}, error) {
-	req := DepthRequest{
-		Symbol:   symbol,
-		Exchange: exchange,
+	payload := map[string]interface{}{
+		"apikey":   c.apiKey,
+		"symbol":   symbol,
+		"exchange": exchange,
 	}
-	return c.makeRequest("POST", "/api/v1/depth", req)
+	return c.makeRequest("POST", "/depth", payload)
 }
 
 func (c *Client) History(symbol, exchange, interval, startDate, endDate string) (map[string]interface{}, error) {
-	req := HistoryRequest{
-		Symbol:    symbol,
-		Exchange:  exchange,
-		Interval:  interval,
-		StartDate: startDate,
-		EndDate:   endDate,
+	payload := map[string]interface{}{
+		"apikey":     c.apiKey,
+		"symbol":     symbol,
+		"exchange":   exchange,
+		"interval":   interval,
+		"start_date": startDate,
+		"end_date":   endDate,
 	}
-	return c.makeRequest("POST", "/api/v1/history", req)
+	return c.makeRequest("POST", "/history", payload)
 }
 
 func (c *Client) Intervals() (map[string]interface{}, error) {
-	return c.makeRequest("GET", "/api/v1/intervals", nil)
+	payload := map[string]interface{}{
+		"apikey": c.apiKey,
+	}
+	return c.makeRequest("POST", "/intervals", payload)
 }
 
 func (c *Client) Symbol(symbol, exchange string) (map[string]interface{}, error) {
-	req := SymbolRequest{
-		Symbol:   symbol,
-		Exchange: exchange,
+	payload := map[string]interface{}{
+		"apikey":   c.apiKey,
+		"symbol":   symbol,
+		"exchange": exchange,
 	}
-	return c.makeRequest("POST", "/api/v1/symbol", req)
+	return c.makeRequest("POST", "/symbol", payload)
 }
 
 func (c *Client) Search(query, exchange string) (map[string]interface{}, error) {
-	req := SearchRequest{
-		Query:    query,
-		Exchange: exchange,
+	payload := map[string]interface{}{
+		"apikey": c.apiKey,
+		"query":  query,
 	}
-	return c.makeRequest("POST", "/api/v1/search", req)
+	if exchange != "" {
+		payload["exchange"] = exchange
+	}
+	return c.makeRequest("POST", "/search", payload)
 }
 
 func (c *Client) Expiry(symbol, exchange, instrumentType string) (map[string]interface{}, error) {
-	req := ExpiryRequest{
-		Symbol:         symbol,
-		Exchange:       exchange,
-		InstrumentType: instrumentType,
+	payload := map[string]interface{}{
+		"apikey":         c.apiKey,
+		"symbol":         symbol,
+		"exchange":       exchange,
+		"instrumenttype": instrumentType,
 	}
-	return c.makeRequest("POST", "/api/v1/expiry", req)
+	return c.makeRequest("POST", "/expiry", payload)
 }

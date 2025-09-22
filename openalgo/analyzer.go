@@ -24,12 +24,16 @@ type AnalyzerToggleResponse struct {
 }
 
 func (c *Client) AnalyzerStatus() (map[string]interface{}, error) {
-	return c.makeRequest("GET", "/api/v1/analyzerstatus", nil)
+	payload := map[string]interface{}{
+		"apikey": c.apiKey,
+	}
+	return c.makeRequest("POST", "/analyzer", payload)
 }
 
 func (c *Client) AnalyzerToggle(mode bool) (map[string]interface{}, error) {
-	req := AnalyzerToggleRequest{
-		Mode: mode,
+	payload := map[string]interface{}{
+		"apikey": c.apiKey,
+		"mode":   mode,
 	}
-	return c.makeRequest("POST", "/api/v1/analyzertoggle", req)
+	return c.makeRequest("POST", "/analyzer/toggle", payload)
 }
