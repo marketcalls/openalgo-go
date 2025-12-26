@@ -154,13 +154,13 @@ func main() {
 	// Place split order with limit price
 	splitLimitResp, err := client.SplitOrder(
 		"GO Strategy", // strategy
-		"SBIN",   // symbol
-		"NSE",    // exchange
-		"SELL",   // action
-		50,       // total quantity
-		10,       // split size (5 orders of 10 each)
-		"LIMIT",  // price_type
-		"CNC",    // product
+		"SBIN",        // symbol
+		"NSE",         // exchange
+		"SELL",        // action
+		50,            // total quantity
+		10,            // split size (5 orders of 10 each)
+		"LIMIT",       // price_type
+		"CNC",         // product
 		map[string]interface{}{
 			"price": "450.00", // Limit price
 		},

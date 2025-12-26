@@ -1,12 +1,14 @@
 package openalgo
 
+import "net/http"
+
 type FundsResponse struct {
 	Status string `json:"status"`
 	Data   struct {
-		AvailableCash string `json:"availablecash"`
-		Collateral    string `json:"collateral"`
-		M2MRealized   string `json:"m2mrealized"`
-		M2MUnrealized string `json:"m2munrealized"`
+		AvailableCash  string `json:"availablecash"`
+		Collateral     string `json:"collateral"`
+		M2MRealized    string `json:"m2mrealized"`
+		M2MUnrealized  string `json:"m2munrealized"`
 		UtilisedDebits string `json:"utiliseddebits"`
 	} `json:"data"`
 }
@@ -89,35 +91,35 @@ func (c *Client) Funds() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "funds", payload)
+	return c.makeRequest(http.MethodPost, "funds", payload)
 }
 
 func (c *Client) OrderBook() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "orderbook", payload)
+	return c.makeRequest(http.MethodPost, "orderbook", payload)
 }
 
 func (c *Client) TradeBook() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "tradebook", payload)
+	return c.makeRequest(http.MethodPost, "tradebook", payload)
 }
 
 func (c *Client) PositionBook() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "positionbook", payload)
+	return c.makeRequest(http.MethodPost, "positionbook", payload)
 }
 
 func (c *Client) Holdings() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "holdings", payload)
+	return c.makeRequest(http.MethodPost, "holdings", payload)
 }
 
 // MarginPosition represents a position for margin calculation
@@ -149,5 +151,5 @@ func (c *Client) Margin(positions []MarginPosition) (map[string]interface{}, err
 		"apikey":    c.apiKey,
 		"positions": positionsPayload,
 	}
-	return c.makeRequest("POST", "margin", payload)
+	return c.makeRequest(http.MethodPost, "margin", payload)
 }

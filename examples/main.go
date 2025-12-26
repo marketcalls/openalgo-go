@@ -25,12 +25,12 @@ func main() {
 	// PlaceOrder example - Market Order
 	marketOrderResp, err := client.PlaceOrder(
 		"GO Strategy", // strategy
-		"NHPC",      // symbol
-		"BUY",       // action
-		"NSE",       // exchange
-		"MARKET",    // price_type
-		"MIS",       // product
-		1,           // quantity
+		"NHPC",        // symbol
+		"BUY",         // action
+		"NSE",         // exchange
+		"MARKET",      // price_type
+		"MIS",         // product
+		1,             // quantity
 	)
 	if err != nil {
 		log.Printf("Error placing market order: %v", err)
@@ -41,16 +41,16 @@ func main() {
 	// PlaceOrder example - Limit Order with optional parameters
 	limitOrderResp, err := client.PlaceOrder(
 		"GO Strategy", // strategy
-		"YESBANK",   // symbol
-		"BUY",       // action
-		"NSE",       // exchange
-		"LIMIT",     // price_type
-		"MIS",       // product
-		"1",         // quantity
+		"YESBANK",     // symbol
+		"BUY",         // action
+		"NSE",         // exchange
+		"LIMIT",       // price_type
+		"MIS",         // product
+		"1",           // quantity
 		map[string]interface{}{
-			"price":               16.0,
-			"trigger_price":       0.0,
-			"disclosed_quantity":  "0",
+			"price":              16.0,
+			"trigger_price":      0.0,
+			"disclosed_quantity": "0",
 		},
 	)
 	if err != nil {
@@ -105,13 +105,13 @@ func main() {
 	// SplitOrder example
 	splitResp, err := client.SplitOrder(
 		"GO Strategy", // strategy
-		"YESBANK",   // symbol
-		"NSE",       // exchange
-		"SELL",      // action
-		105,         // quantity
-		20,          // split_size
-		"MARKET",    // price_type
-		"MIS",       // product
+		"YESBANK",     // symbol
+		"NSE",         // exchange
+		"SELL",        // action
+		105,           // quantity
+		20,            // split_size
+		"MARKET",      // price_type
+		"MIS",         // product
 	)
 	if err != nil {
 		log.Printf("Error placing split order: %v", err)

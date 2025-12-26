@@ -1,5 +1,7 @@
 package openalgo
 
+import "net/http"
+
 type AnalyzerStatusResponse struct {
 	Status string `json:"status"`
 	Data   struct {
@@ -27,7 +29,7 @@ func (c *Client) AnalyzerStatus() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "analyzer", payload)
+	return c.makeRequest(http.MethodPost, "analyzer", payload)
 }
 
 func (c *Client) AnalyzerToggle(mode bool) (map[string]interface{}, error) {
@@ -35,5 +37,5 @@ func (c *Client) AnalyzerToggle(mode bool) (map[string]interface{}, error) {
 		"apikey": c.apiKey,
 		"mode":   mode,
 	}
-	return c.makeRequest("POST", "analyzer/toggle", payload)
+	return c.makeRequest(http.MethodPost, "analyzer/toggle", payload)
 }

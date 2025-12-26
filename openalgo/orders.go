@@ -2,6 +2,7 @@ package openalgo
 
 import (
 	"fmt"
+	"net/http"
 )
 
 // PlaceOrder places a new order
@@ -59,7 +60,7 @@ func (c *Client) PlaceOrder(strategy, symbol, action, exchange, priceType, produ
 		}
 	}
 
-	return c.makeRequest("POST", "placeorder", payload)
+	return c.makeRequest(http.MethodPost, "placeorder", payload)
 }
 
 // PlaceSmartOrder places a smart order considering position size
@@ -128,7 +129,7 @@ func (c *Client) PlaceSmartOrder(strategy, symbol, action, exchange, priceType, 
 		}
 	}
 
-	return c.makeRequest("POST", "placesmartorder", payload)
+	return c.makeRequest(http.MethodPost, "placesmartorder", payload)
 }
 
 // BasketOrder places multiple orders at once
@@ -160,7 +161,7 @@ func (c *Client) BasketOrder(strategy string, orders []map[string]interface{}) (
 		"orders":   processedOrders,
 	}
 
-	return c.makeRequest("POST", "basketorder", payload)
+	return c.makeRequest(http.MethodPost, "basketorder", payload)
 }
 
 // SplitOrder splits a large order into smaller orders
@@ -229,7 +230,7 @@ func (c *Client) SplitOrder(strategy, symbol, exchange, action string, quantity,
 		}
 	}
 
-	return c.makeRequest("POST", "splitorder", payload)
+	return c.makeRequest(http.MethodPost, "splitorder", payload)
 }
 
 // ModifyOrder modifies an existing order
@@ -249,17 +250,17 @@ func (c *Client) ModifyOrder(orderID, strategy, symbol, action, exchange, priceT
 	}
 
 	payload := map[string]interface{}{
-		"apikey":              c.apiKey,
-		"orderid":             orderID,
-		"strategy":            strategy,
-		"symbol":              symbol,
-		"action":              action,
-		"exchange":            exchange,
-		"pricetype":           priceType,
-		"product":             product,
-		"price":               price,
-		"disclosed_quantity":  disclosedQuantity,
-		"trigger_price":       triggerPrice,
+		"apikey":             c.apiKey,
+		"orderid":            orderID,
+		"strategy":           strategy,
+		"symbol":             symbol,
+		"action":             action,
+		"exchange":           exchange,
+		"pricetype":          priceType,
+		"product":            product,
+		"price":              price,
+		"disclosed_quantity": disclosedQuantity,
+		"trigger_price":      triggerPrice,
 	}
 
 	// Convert quantity to string
@@ -274,7 +275,7 @@ func (c *Client) ModifyOrder(orderID, strategy, symbol, action, exchange, priceT
 		return nil, fmt.Errorf("quantity is required")
 	}
 
-	return c.makeRequest("POST", "modifyorder", payload)
+	return c.makeRequest(http.MethodPost, "modifyorder", payload)
 }
 
 // CancelOrder cancels an existing order
@@ -289,7 +290,7 @@ func (c *Client) CancelOrder(orderID, strategy string) (map[string]interface{}, 
 		"strategy": strategy,
 	}
 
-	return c.makeRequest("POST", "cancelorder", payload)
+	return c.makeRequest(http.MethodPost, "cancelorder", payload)
 }
 
 // CancelAllOrder cancels all orders for a strategy
@@ -303,7 +304,7 @@ func (c *Client) CancelAllOrder(strategy string) (map[string]interface{}, error)
 		"strategy": strategy,
 	}
 
-	return c.makeRequest("POST", "cancelallorder", payload)
+	return c.makeRequest(http.MethodPost, "cancelallorder", payload)
 }
 
 // ClosePosition closes all open positions for a strategy
@@ -317,7 +318,7 @@ func (c *Client) ClosePosition(strategy string) (map[string]interface{}, error) 
 		"strategy": strategy,
 	}
 
-	return c.makeRequest("POST", "closeposition", payload)
+	return c.makeRequest(http.MethodPost, "closeposition", payload)
 }
 
 // OrderStatus gets the status of an order
@@ -332,7 +333,7 @@ func (c *Client) OrderStatus(orderID, strategy string) (map[string]interface{}, 
 		"orderid":  orderID,
 	}
 
-	return c.makeRequest("POST", "orderstatus", payload)
+	return c.makeRequest(http.MethodPost, "orderstatus", payload)
 }
 
 // OpenPosition gets the open position for a symbol
@@ -349,7 +350,7 @@ func (c *Client) OpenPosition(strategy, symbol, exchange, product string) (map[s
 		"product":  product,
 	}
 
-	return c.makeRequest("POST", "openposition", payload)
+	return c.makeRequest(http.MethodPost, "openposition", payload)
 }
 
 // OptionsOrder places an options order with automatic strike selection
@@ -401,7 +402,7 @@ func (c *Client) OptionsOrder(strategy, underlying, exchange, expiryDate, offset
 		payload["splitsize"] = "0"
 	}
 
-	return c.makeRequest("POST", "optionsorder", payload)
+	return c.makeRequest(http.MethodPost, "optionsorder", payload)
 }
 
 // OptionsLeg represents a single leg in a multi-leg options order
@@ -446,5 +447,5 @@ func (c *Client) OptionsMultiOrder(strategy, underlying, exchange, expiryDate st
 		payload["expiry_date"] = expiryDate
 	}
 
-	return c.makeRequest("POST", "optionsmultiorder", payload)
+	return c.makeRequest(http.MethodPost, "optionsmultiorder", payload)
 }

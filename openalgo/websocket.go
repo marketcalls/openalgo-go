@@ -34,11 +34,11 @@ type AuthMessage struct {
 
 // MarketData represents the market data received from WebSocket
 type MarketData struct {
-	Type      string      `json:"type"`
-	Symbol    string      `json:"symbol"`
-	Exchange  string      `json:"exchange"`
-	Mode      int         `json:"mode"`
-	Data      interface{} `json:"data"`
+	Type     string      `json:"type"`
+	Symbol   string      `json:"symbol"`
+	Exchange string      `json:"exchange"`
+	Mode     int         `json:"mode"`
+	Data     interface{} `json:"data"`
 }
 
 // Connect establishes a WebSocket connection and authenticates

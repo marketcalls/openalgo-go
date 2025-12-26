@@ -1,6 +1,7 @@
 package openalgo
 
 import (
+	"net/http"
 	"time"
 )
 
@@ -91,7 +92,7 @@ func (c *Client) Quotes(symbol, exchange string) (map[string]interface{}, error)
 		"symbol":   symbol,
 		"exchange": exchange,
 	}
-	return c.makeRequest("POST", "quotes", payload)
+	return c.makeRequest(http.MethodPost, "quotes", payload)
 }
 
 func (c *Client) Depth(symbol, exchange string) (map[string]interface{}, error) {
@@ -100,7 +101,7 @@ func (c *Client) Depth(symbol, exchange string) (map[string]interface{}, error) 
 		"symbol":   symbol,
 		"exchange": exchange,
 	}
-	return c.makeRequest("POST", "depth", payload)
+	return c.makeRequest(http.MethodPost, "depth", payload)
 }
 
 func (c *Client) History(symbol, exchange, interval, startDate, endDate string) (map[string]interface{}, error) {
@@ -112,14 +113,14 @@ func (c *Client) History(symbol, exchange, interval, startDate, endDate string) 
 		"start_date": startDate,
 		"end_date":   endDate,
 	}
-	return c.makeRequest("POST", "history", payload)
+	return c.makeRequest(http.MethodPost, "history", payload)
 }
 
 func (c *Client) Intervals() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "intervals", payload)
+	return c.makeRequest(http.MethodPost, "intervals", payload)
 }
 
 func (c *Client) Symbol(symbol, exchange string) (map[string]interface{}, error) {
@@ -128,7 +129,7 @@ func (c *Client) Symbol(symbol, exchange string) (map[string]interface{}, error)
 		"symbol":   symbol,
 		"exchange": exchange,
 	}
-	return c.makeRequest("POST", "symbol", payload)
+	return c.makeRequest(http.MethodPost, "symbol", payload)
 }
 
 func (c *Client) Search(query, exchange string) (map[string]interface{}, error) {
@@ -139,7 +140,7 @@ func (c *Client) Search(query, exchange string) (map[string]interface{}, error) 
 	if exchange != "" {
 		payload["exchange"] = exchange
 	}
-	return c.makeRequest("POST", "search", payload)
+	return c.makeRequest(http.MethodPost, "search", payload)
 }
 
 func (c *Client) Expiry(symbol, exchange, instrumentType string) (map[string]interface{}, error) {
@@ -149,7 +150,7 @@ func (c *Client) Expiry(symbol, exchange, instrumentType string) (map[string]int
 		"exchange":       exchange,
 		"instrumenttype": instrumentType,
 	}
-	return c.makeRequest("POST", "expiry", payload)
+	return c.makeRequest(http.MethodPost, "expiry", payload)
 }
 
 // MultiQuotes gets quotes for multiple symbols
@@ -158,7 +159,7 @@ func (c *Client) MultiQuotes(symbols []map[string]string) (map[string]interface{
 		"apikey":  c.apiKey,
 		"symbols": symbols,
 	}
-	return c.makeRequest("POST", "multiquotes", payload)
+	return c.makeRequest(http.MethodPost, "multiquotes", payload)
 }
 
 // OptionChain gets option chain data for an underlying
@@ -172,7 +173,7 @@ func (c *Client) OptionChain(underlying, exchange, expiryDate string, strikeCoun
 	if len(strikeCount) > 0 {
 		payload["strike_count"] = strikeCount[0]
 	}
-	return c.makeRequest("POST", "optionchain", payload)
+	return c.makeRequest(http.MethodPost, "optionchain", payload)
 }
 
 // OptionSymbol gets option symbol based on offset from ATM
@@ -185,7 +186,7 @@ func (c *Client) OptionSymbol(underlying, exchange, expiryDate, offset, optionTy
 		"offset":      offset,
 		"option_type": optionType,
 	}
-	return c.makeRequest("POST", "optionsymbol", payload)
+	return c.makeRequest(http.MethodPost, "optionsymbol", payload)
 }
 
 // SyntheticFuture calculates synthetic future price from ATM options
@@ -196,7 +197,7 @@ func (c *Client) SyntheticFuture(underlying, exchange, expiryDate string) (map[s
 		"exchange":    exchange,
 		"expiry_date": expiryDate,
 	}
-	return c.makeRequest("POST", "syntheticfuture", payload)
+	return c.makeRequest(http.MethodPost, "syntheticfuture", payload)
 }
 
 // OptionGreeks calculates option Greeks for a symbol
@@ -209,7 +210,7 @@ func (c *Client) OptionGreeks(symbol, exchange string, interestRate float64, und
 		"underlying_symbol":   underlyingSymbol,
 		"underlying_exchange": underlyingExchange,
 	}
-	return c.makeRequest("POST", "optiongreeks", payload)
+	return c.makeRequest(http.MethodPost, "optiongreeks", payload)
 }
 
 // Instruments gets all instruments for an exchange
@@ -218,5 +219,5 @@ func (c *Client) Instruments(exchange string) (map[string]interface{}, error) {
 		"apikey":   c.apiKey,
 		"exchange": exchange,
 	}
-	return c.makeRequest("POST", "instruments", payload)
+	return c.makeRequest(http.MethodPost, "instruments", payload)
 }

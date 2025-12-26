@@ -1,11 +1,13 @@
 package openalgo
 
+import "net/http"
+
 // Ping checks API connectivity
 func (c *Client) Ping() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
 	}
-	return c.makeRequest("POST", "ping", payload)
+	return c.makeRequest(http.MethodPost, "ping", payload)
 }
 
 // Holidays gets trading holidays for a year
@@ -14,7 +16,7 @@ func (c *Client) Holidays(year int) (map[string]interface{}, error) {
 		"apikey": c.apiKey,
 		"year":   year,
 	}
-	return c.makeRequest("POST", "market/holidays", payload)
+	return c.makeRequest(http.MethodPost, "market/holidays", payload)
 }
 
 // Timings gets exchange trading timings for a specific date
@@ -23,7 +25,7 @@ func (c *Client) Timings(date string) (map[string]interface{}, error) {
 		"apikey": c.apiKey,
 		"date":   date,
 	}
-	return c.makeRequest("POST", "market/timings", payload)
+	return c.makeRequest(http.MethodPost, "market/timings", payload)
 }
 
 // Telegram sends a Telegram notification with default priority (5)
@@ -39,5 +41,5 @@ func (c *Client) TelegramWithPriority(username, message string, priority int) (m
 		"message":  message,
 		"priority": priority,
 	}
-	return c.makeRequest("POST", "telegram/notify", payload)
+	return c.makeRequest(http.MethodPost, "telegram/notify", payload)
 }

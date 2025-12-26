@@ -35,12 +35,12 @@ func main() {
 	fmt.Println("\n=== 2. PLACE MARKET ORDER (NHPC) ===")
 	marketOrder, err := client.PlaceOrder(
 		"GO Strategy", // strategy
-		"NHPC",   // symbol
-		"BUY",    // action
-		"NSE",    // exchange
-		"MARKET", // price_type
-		"MIS",    // product
-		1,        // quantity
+		"NHPC",        // symbol
+		"BUY",         // action
+		"NSE",         // exchange
+		"MARKET",      // price_type
+		"MIS",         // product
+		1,             // quantity
 	)
 	if err != nil {
 		log.Printf("Error placing market order: %v", err)
