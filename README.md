@@ -94,6 +94,7 @@ fmt.Printf("Version: %s\n", openalgo.Version)
 - `Quotes` - Get real-time quotes
 - `Depth` - Get market depth (order book)
 - `History` - Get historical data
+- `HistoryFromDb` - Get historical data from DB
 - `Intervals` - Get available time intervals
 - `Symbol` - Get symbol details
 - `Search` - Search for symbols

@@ -115,6 +115,20 @@ func (c *Client) History(symbol, exchange, interval, startDate, endDate string) 
 	return c.makeRequest("POST", "history", payload)
 }
 
+func (c *Client) HistoryFromDb(symbol, exchange, interval, startDate, endDate string) (map[string]interface{}, error) {
+	payload := map[string]interface{}{
+		"apikey":     c.apiKey,
+		"symbol":     symbol,
+		"exchange":   exchange,
+		"interval":   interval,
+		"start_date": startDate,
+		"end_date":   endDate,
+		"source":     "db",
+	}
+	return c.makeRequest("POST", "history", payload)
+}
+
+
 func (c *Client) Intervals() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
