@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -39,6 +41,295 @@ type MarketData struct {
 	Exchange  string      `json:"exchange"`
 	Mode      int         `json:"mode"`
 	Data      interface{} `json:"data"`
+}
+
+// ltpCacheEntry mirrors the Python SDK's ltp_data[...] snapshot: {'price': ..., 'timestamp': ...}
+type ltpCacheEntry struct {
+	Price     float64
+	Timestamp int64
+}
+
+// quoteCacheEntry mirrors the Python SDK's quotes_data[...] snapshot.
+type quoteCacheEntry struct {
+	Open              float64
+	High              float64
+	Low               float64
+	Close             float64
+	LTP               float64
+	Volume            float64
+	LastTradeQuantity float64
+	AvgTradePrice     float64
+	Change            float64
+	ChangePercent     float64
+	Timestamp         int64
+}
+
+// depthCacheEntry mirrors the Python SDK's depth_data[...] snapshot. Buy/Sell
+// hold the raw per-level maps (each with "price"/"quantity"/"orders") as
+// received from the server.
+type depthCacheEntry struct {
+	LTP       float64
+	Timestamp int64
+	Buy       []map[string]interface{}
+	Sell      []map[string]interface{}
+}
+
+// toFloat64 best-effort converts a decoded JSON value to float64.
+func toFloat64(v interface{}) float64 {
+	switch t := v.(type) {
+	case float64:
+		return t
+	case int:
+		return float64(t)
+	case int64:
+		return float64(t)
+	case string:
+		f, _ := strconv.ParseFloat(t, 64)
+		return f
+	default:
+		return 0
+	}
+}
+
+// toInt64OrDefault best-effort converts a decoded JSON value to int64,
+// falling back to def when v is nil or of an unexpected type.
+func toInt64OrDefault(v interface{}, def int64) int64 {
+	if v == nil {
+		return def
+	}
+	switch t := v.(type) {
+	case float64:
+		return int64(t)
+	case int64:
+		return t
+	case int:
+		return int64(t)
+	default:
+		return def
+	}
+}
+
+// toDepthLevels extracts a "buy"/"sell" depth level array from the raw
+// decoded "depth" object.
+func toDepthLevels(v interface{}) []map[string]interface{} {
+	arr, ok := v.([]interface{})
+	if !ok {
+		return nil
+	}
+	levels := make([]map[string]interface{}, 0, len(arr))
+	for _, item := range arr {
+		if m, ok := item.(map[string]interface{}); ok {
+			levels = append(levels, m)
+		}
+	}
+	return levels
+}
+
+// splitSymbolKey splits an "EXCHANGE:SYMBOL" cache key back into its parts.
+func splitSymbolKey(key string) (exchange, symbol string, ok bool) {
+	idx := strings.Index(key, ":")
+	if idx < 0 {
+		return "", "", false
+	}
+	return key[:idx], key[idx+1:], true
+}
+
+// storeMarketData caches an incoming market_data message in ltpData/
+// quotesData/depthData depending on mode, mirroring the Python SDK's
+// _process_message bookkeeping. Safe for concurrent use.
+func (c *Client) storeMarketData(exchange, symbol string, mode int, marketData map[string]interface{}) {
+	if exchange == "" || symbol == "" || marketData == nil {
+		return
+	}
+	key := exchange + ":" + symbol
+	now := time.Now().UnixMilli()
+
+	switch mode {
+	case 1: // LTP
+		if _, ok := marketData["ltp"]; !ok {
+			return
+		}
+		entry := ltpCacheEntry{
+			Price:     toFloat64(marketData["ltp"]),
+			Timestamp: toInt64OrDefault(marketData["timestamp"], now),
+		}
+		c.dataMu.Lock()
+		c.ltpData[key] = entry
+		c.dataMu.Unlock()
+
+	case 2: // Quote
+		entry := quoteCacheEntry{
+			Open:              toFloat64(marketData["open"]),
+			High:              toFloat64(marketData["high"]),
+			Low:               toFloat64(marketData["low"]),
+			Close:             toFloat64(marketData["close"]),
+			LTP:               toFloat64(marketData["ltp"]),
+			Volume:            toFloat64(marketData["volume"]),
+			LastTradeQuantity: toFloat64(marketData["last_trade_quantity"]),
+			AvgTradePrice:     toFloat64(marketData["avg_trade_price"]),
+			Change:            toFloat64(marketData["change"]),
+			ChangePercent:     toFloat64(marketData["change_percent"]),
+			Timestamp:         toInt64OrDefault(marketData["timestamp"], now),
+		}
+		c.dataMu.Lock()
+		c.quotesData[key] = entry
+		c.dataMu.Unlock()
+
+	case 3: // Depth
+		depthRaw, ok := marketData["depth"].(map[string]interface{})
+		if !ok {
+			return
+		}
+		entry := depthCacheEntry{
+			LTP:       toFloat64(marketData["ltp"]),
+			Timestamp: toInt64OrDefault(marketData["timestamp"], now),
+			Buy:       toDepthLevels(depthRaw["buy"]),
+			Sell:      toDepthLevels(depthRaw["sell"]),
+		}
+		c.dataMu.Lock()
+		c.depthData[key] = entry
+		c.dataMu.Unlock()
+	}
+}
+
+// GetLTP returns the latest cached LTP snapshots in nested format:
+//
+//	{"ltp": {"EXCHANGE": {"SYMBOL": {"timestamp": ..., "ltp": ...}}}}
+//
+// Pass "" for exchange/symbol to skip that filter (both empty returns
+// everything currently cached).
+func (c *Client) GetLTP(exchange, symbol string) map[string]interface{} {
+	c.dataMu.Lock()
+	defer c.dataMu.Unlock()
+
+	ltp := map[string]interface{}{}
+	for key, entry := range c.ltpData {
+		ex, sym, ok := splitSymbolKey(key)
+		if !ok {
+			continue
+		}
+		if exchange != "" && ex != exchange {
+			continue
+		}
+		if symbol != "" && sym != symbol {
+			continue
+		}
+
+		exMap, ok := ltp[ex].(map[string]interface{})
+		if !ok {
+			exMap = map[string]interface{}{}
+			ltp[ex] = exMap
+		}
+		exMap[sym] = map[string]interface{}{
+			"timestamp": entry.Timestamp,
+			"ltp":       entry.Price,
+		}
+	}
+
+	return map[string]interface{}{"ltp": ltp}
+}
+
+// GetQuotes returns the latest cached Quote snapshots in nested format:
+//
+//	{"quote": {"EXCHANGE": {"SYMBOL": {...ohlc + ltp + volume fields...}}}}
+//
+// Pass "" for exchange/symbol to skip that filter.
+func (c *Client) GetQuotes(exchange, symbol string) map[string]interface{} {
+	c.dataMu.Lock()
+	defer c.dataMu.Unlock()
+
+	quote := map[string]interface{}{}
+	for key, entry := range c.quotesData {
+		ex, sym, ok := splitSymbolKey(key)
+		if !ok {
+			continue
+		}
+		if exchange != "" && ex != exchange {
+			continue
+		}
+		if symbol != "" && sym != symbol {
+			continue
+		}
+
+		exMap, ok := quote[ex].(map[string]interface{})
+		if !ok {
+			exMap = map[string]interface{}{}
+			quote[ex] = exMap
+		}
+		exMap[sym] = map[string]interface{}{
+			"timestamp":           entry.Timestamp,
+			"open":                entry.Open,
+			"high":                entry.High,
+			"low":                 entry.Low,
+			"close":               entry.Close,
+			"ltp":                 entry.LTP,
+			"volume":              entry.Volume,
+			"last_trade_quantity": entry.LastTradeQuantity,
+			"avg_trade_price":     entry.AvgTradePrice,
+			"change":              entry.Change,
+			"change_percent":      entry.ChangePercent,
+		}
+	}
+
+	return map[string]interface{}{"quote": quote}
+}
+
+// buildDepthBook converts raw depth levels into the "1".."5" level map shape
+// used by GetDepth, padding missing levels with zeroes (matching the Python SDK).
+func buildDepthBook(levels []map[string]interface{}) map[string]interface{} {
+	book := map[string]interface{}{}
+	for i := 0; i < 5; i++ {
+		level := map[string]interface{}{"price": 0.0, "qty": 0, "orders": 0}
+		if i < len(levels) {
+			l := levels[i]
+			level = map[string]interface{}{
+				"price":  toFloat64(l["price"]),
+				"qty":    int64(toFloat64(l["quantity"])),
+				"orders": int64(toFloat64(l["orders"])),
+			}
+		}
+		book[strconv.Itoa(i+1)] = level
+	}
+	return book
+}
+
+// GetDepth returns the latest cached Market Depth snapshots in nested format:
+//
+//	{"depth": {"EXCHANGE": {"SYMBOL": {"timestamp":..., "ltp":..., "buyBook": {...}, "sellBook": {...}}}}}
+//
+// buyBook/sellBook always contain levels "1".."5", zero-padded when fewer
+// levels were received. Pass "" for exchange/symbol to skip that filter.
+func (c *Client) GetDepth(exchange, symbol string) map[string]interface{} {
+	c.dataMu.Lock()
+	defer c.dataMu.Unlock()
+
+	depth := map[string]interface{}{}
+	for key, entry := range c.depthData {
+		ex, sym, ok := splitSymbolKey(key)
+		if !ok {
+			continue
+		}
+		if exchange != "" && ex != exchange {
+			continue
+		}
+		if symbol != "" && sym != symbol {
+			continue
+		}
+
+		exMap, ok := depth[ex].(map[string]interface{})
+		if !ok {
+			exMap = map[string]interface{}{}
+			depth[ex] = exMap
+		}
+		exMap[sym] = map[string]interface{}{
+			"timestamp": entry.Timestamp,
+			"ltp":       entry.LTP,
+			"buyBook":   buildDepthBook(entry.Buy),
+			"sellBook":  buildDepthBook(entry.Sell),
+		}
+	}
+
+	return map[string]interface{}{"depth": depth}
 }
 
 // Connect establishes a WebSocket connection and authenticates
@@ -100,6 +391,14 @@ func (c *Client) readMessages() {
 			mode := 0
 			if m, ok := data["mode"].(float64); ok {
 				mode = int(m)
+			}
+
+			// Cache the snapshot so GetLTP/GetQuotes/GetDepth can serve it
+			// without requiring the caller to wire up a callback.
+			exchange, _ := data["exchange"].(string)
+			symbol, _ := data["symbol"].(string)
+			if marketData, ok := data["data"].(map[string]interface{}); ok {
+				c.storeMarketData(exchange, symbol, mode, marketData)
 			}
 
 			// Route to appropriate callback based on mode
@@ -204,6 +503,11 @@ func (c *Client) UnsubscribeLTP(instruments []Instrument) error {
 			return fmt.Errorf("error unsubscribing from %s:%s: %w", exchange, symbol, err)
 		}
 
+		// Clean up cached LTP data for this symbol (mirrors Python SDK).
+		c.dataMu.Lock()
+		delete(c.ltpData, exchange+":"+symbol)
+		c.dataMu.Unlock()
+
 		time.Sleep(100 * time.Millisecond)
 	}
 
@@ -288,6 +592,11 @@ func (c *Client) UnsubscribeQuote(instruments []Instrument) error {
 			return fmt.Errorf("error unsubscribing from %s:%s: %w", exchange, symbol, err)
 		}
 
+		// Clean up cached quote data for this symbol (mirrors Python SDK).
+		c.dataMu.Lock()
+		delete(c.quotesData, exchange+":"+symbol)
+		c.dataMu.Unlock()
+
 		time.Sleep(100 * time.Millisecond)
 	}
 
@@ -371,6 +680,11 @@ func (c *Client) UnsubscribeDepth(instruments []Instrument) error {
 		if err := c.wsConn.WriteJSON(msg); err != nil {
 			return fmt.Errorf("error unsubscribing from %s:%s: %w", exchange, symbol, err)
 		}
+
+		// Clean up cached depth data for this symbol (mirrors Python SDK).
+		c.dataMu.Lock()
+		delete(c.depthData, exchange+":"+symbol)
+		c.dataMu.Unlock()
 
 		time.Sleep(100 * time.Millisecond)
 	}

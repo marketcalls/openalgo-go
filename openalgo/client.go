@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -21,6 +22,15 @@ type Client struct {
 	client    *http.Client
 	wsConn    *websocket.Conn
 	callbacks map[string]func(interface{})
+
+	// dataMu guards the ltpData/quotesData/depthData snapshot caches that
+	// are populated as WebSocket market data messages arrive (mirrors the
+	// Python SDK's ltp_data/quotes_data/depth_data dicts), read back via
+	// GetLTP/GetQuotes/GetDepth.
+	dataMu     sync.Mutex
+	ltpData    map[string]ltpCacheEntry
+	quotesData map[string]quoteCacheEntry
+	depthData  map[string]depthCacheEntry
 }
 
 // NewClient creates a new OpenAlgo API client
@@ -44,12 +54,15 @@ func NewClient(apiKey string, host string, optionalArgs ...interface{}) *Client 
 	}
 
 	c := &Client{
-		apiKey:    apiKey,
-		host:      host,
-		baseURL:   fmt.Sprintf("%s/api/%s/", host, version),
-		wsPort:    wsPort,
-		client:    &http.Client{Timeout: 30 * time.Second},
-		callbacks: make(map[string]func(interface{})),
+		apiKey:     apiKey,
+		host:       host,
+		baseURL:    fmt.Sprintf("%s/api/%s/", host, version),
+		wsPort:     wsPort,
+		client:     &http.Client{Timeout: 30 * time.Second},
+		callbacks:  make(map[string]func(interface{})),
+		ltpData:    make(map[string]ltpCacheEntry),
+		quotesData: make(map[string]quoteCacheEntry),
+		depthData:  make(map[string]depthCacheEntry),
 	}
 
 	// Set WebSocket URL

@@ -352,8 +352,14 @@ func (c *Client) OpenPosition(strategy, symbol, exchange, product string) (map[s
 	return c.makeRequest("POST", "openposition", payload)
 }
 
-// OptionsOrder places an options order with automatic strike selection
-func (c *Client) OptionsOrder(strategy, underlying, exchange, expiryDate, offset, optionType, action string, quantity interface{}, priceType, product string, splitSize interface{}) (map[string]interface{}, error) {
+// OptionsOrder places an options order with automatic strike selection.
+//
+// optionalParams may include:
+//   - "strike_int" (int): DEPRECATED - strike interval override (e.g. 50 for NIFTY).
+//   - "price" (string/float64): required for LIMIT orders.
+//   - "trigger_price" (string/float64): required for SL/SL-M orders.
+//   - "disclosed_quantity" (string/int): disclosed quantity.
+func (c *Client) OptionsOrder(strategy, underlying, exchange, expiryDate, offset, optionType, action string, quantity interface{}, priceType, product string, splitSize interface{}, optionalParams ...map[string]interface{}) (map[string]interface{}, error) {
 	if strategy == "" {
 		strategy = "GO Strategy"
 	}
@@ -399,6 +405,25 @@ func (c *Client) OptionsOrder(strategy, underlying, exchange, expiryDate, offset
 		payload["splitsize"] = fmt.Sprintf("%.0f", v)
 	default:
 		payload["splitsize"] = "0"
+	}
+
+	// Add optional parameters
+	if len(optionalParams) > 0 {
+		params := optionalParams[0]
+		for key, value := range params {
+			if value != nil {
+				switch v := value.(type) {
+				case string:
+					payload[key] = v
+				case int:
+					payload[key] = fmt.Sprintf("%d", v)
+				case float64:
+					payload[key] = fmt.Sprintf("%g", v)
+				default:
+					payload[key] = fmt.Sprintf("%v", v)
+				}
+			}
+		}
 	}
 
 	return c.makeRequest("POST", "optionsorder", payload)

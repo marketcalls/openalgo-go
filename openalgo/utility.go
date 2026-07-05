@@ -1,5 +1,7 @@
 package openalgo
 
+import "time"
+
 // Ping checks API connectivity
 func (c *Client) Ping() (map[string]interface{}, error) {
 	payload := map[string]interface{}{
@@ -8,20 +10,35 @@ func (c *Client) Ping() (map[string]interface{}, error) {
 	return c.makeRequest("POST", "ping", payload)
 }
 
-// Holidays gets trading holidays for a year
-func (c *Client) Holidays(year int) (map[string]interface{}, error) {
+// Holidays gets trading holidays for a year (2020-2050).
+//
+// year is optional - pass no argument (or 0) to default to the current year.
+func (c *Client) Holidays(year ...int) (map[string]interface{}, error) {
+	y := time.Now().Year()
+	if len(year) > 0 && year[0] != 0 {
+		y = year[0]
+	}
+
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
-		"year":   year,
+		"year":   y,
 	}
 	return c.makeRequest("POST", "market/holidays", payload)
 }
 
-// Timings gets exchange trading timings for a specific date
-func (c *Client) Timings(date string) (map[string]interface{}, error) {
+// Timings gets exchange trading timings for a specific date.
+//
+// date is optional (format "YYYY-MM-DD") - pass no argument (or an empty
+// string) to default to today's date.
+func (c *Client) Timings(date ...string) (map[string]interface{}, error) {
+	d := time.Now().Format("2006-01-02")
+	if len(date) > 0 && date[0] != "" {
+		d = date[0]
+	}
+
 	payload := map[string]interface{}{
 		"apikey": c.apiKey,
-		"date":   date,
+		"date":   d,
 	}
 	return c.makeRequest("POST", "market/timings", payload)
 }

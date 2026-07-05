@@ -1,5 +1,7 @@
 package openalgo
 
+import "fmt"
+
 type FundsResponse struct {
 	Status string `json:"status"`
 	Data   struct {
@@ -120,28 +122,53 @@ func (c *Client) Holdings() (map[string]interface{}, error) {
 	return c.makeRequest("POST", "holdings", payload)
 }
 
-// MarginPosition represents a position for margin calculation
+// MarginPosition represents a position for margin calculation.
+//
+// Price and TriggerPrice are optional and default to "0" server-side; set
+// Price for LIMIT orders and TriggerPrice for SL/SL-M orders.
 type MarginPosition struct {
-	Symbol    string `json:"symbol"`
-	Exchange  string `json:"exchange"`
-	Action    string `json:"action"`
-	Product   string `json:"product"`
-	PriceType string `json:"pricetype"`
-	Quantity  string `json:"quantity"`
+	Symbol       string `json:"symbol"`
+	Exchange     string `json:"exchange"`
+	Action       string `json:"action"`
+	Product      string `json:"product"`
+	PriceType    string `json:"pricetype"`
+	Quantity     string `json:"quantity"`
+	Price        string `json:"price,omitempty"`
+	TriggerPrice string `json:"trigger_price,omitempty"`
 }
 
-// Margin calculates margin requirements for positions
+// Margin calculates margin requirements for a basket of positions (max 50),
+// accounting for broker-specific hedge benefits.
 func (c *Client) Margin(positions []MarginPosition) (map[string]interface{}, error) {
-	// Convert positions to interface slice
+	if len(positions) == 0 {
+		return nil, fmt.Errorf("positions array cannot be empty")
+	}
+	if len(positions) > 50 {
+		return nil, fmt.Errorf("maximum 50 positions allowed")
+	}
+
+	// Convert positions to interface slice, defaulting price/trigger_price
+	// to "0" the same way the Python SDK does for MARKET orders.
 	positionsPayload := make([]map[string]interface{}, len(positions))
 	for i, pos := range positions {
+		price := pos.Price
+		if price == "" {
+			price = "0"
+		}
+		triggerPrice := pos.TriggerPrice
+		if triggerPrice == "" {
+			triggerPrice = "0"
+		}
+
 		positionsPayload[i] = map[string]interface{}{
-			"symbol":    pos.Symbol,
-			"exchange":  pos.Exchange,
-			"action":    pos.Action,
-			"product":   pos.Product,
-			"pricetype": pos.PriceType,
-			"quantity":  pos.Quantity,
+			"symbol":        pos.Symbol,
+			"exchange":      pos.Exchange,
+			"action":        pos.Action,
+			"product":       pos.Product,
+			"pricetype":     pos.PriceType,
+			"quantity":      pos.Quantity,
+			"price":         price,
+			"trigger_price": triggerPrice,
 		}
 	}
 

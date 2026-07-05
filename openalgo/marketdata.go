@@ -1,6 +1,7 @@
 package openalgo
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -103,7 +104,17 @@ func (c *Client) Depth(symbol, exchange string) (map[string]interface{}, error) 
 	return c.makeRequest("POST", "depth", payload)
 }
 
-func (c *Client) History(symbol, exchange, interval, startDate, endDate string) (map[string]interface{}, error) {
+// History fetches historical OHLCV data for a symbol.
+//
+// source is optional: "api" (default) fetches from the broker API, "db"
+// fetches from the OpenAlgo DuckDB/Historify database (required for custom
+// intraday intervals and multiplier-based daily intervals like "2W"/"3M").
+func (c *Client) History(symbol, exchange, interval, startDate, endDate string, source ...string) (map[string]interface{}, error) {
+	src := "api"
+	if len(source) > 0 && source[0] != "" {
+		src = source[0]
+	}
+
 	payload := map[string]interface{}{
 		"apikey":     c.apiKey,
 		"symbol":     symbol,
@@ -111,6 +122,7 @@ func (c *Client) History(symbol, exchange, interval, startDate, endDate string) 
 		"interval":   interval,
 		"start_date": startDate,
 		"end_date":   endDate,
+		"source":     src,
 	}
 	return c.makeRequest("POST", "history", payload)
 }
@@ -175,8 +187,13 @@ func (c *Client) OptionChain(underlying, exchange, expiryDate string, strikeCoun
 	return c.makeRequest("POST", "optionchain", payload)
 }
 
-// OptionSymbol gets option symbol based on offset from ATM
-func (c *Client) OptionSymbol(underlying, exchange, expiryDate, offset, optionType string) (map[string]interface{}, error) {
+// OptionSymbol resolves the option symbol, lot size, and tick size for an
+// underlying and strike offset (ATM, ITM1-ITM50, OTM1-OTM50) without
+// placing an order.
+//
+// optionalParams may include:
+//   - "strike_int" (int): DEPRECATED - strike interval override (e.g. 50 for NIFTY).
+func (c *Client) OptionSymbol(underlying, exchange, expiryDate, offset, optionType string, optionalParams ...map[string]interface{}) (map[string]interface{}, error) {
 	payload := map[string]interface{}{
 		"apikey":      c.apiKey,
 		"underlying":  underlying,
@@ -185,6 +202,25 @@ func (c *Client) OptionSymbol(underlying, exchange, expiryDate, offset, optionTy
 		"offset":      offset,
 		"option_type": optionType,
 	}
+
+	if len(optionalParams) > 0 {
+		for key, value := range optionalParams[0] {
+			if value == nil {
+				continue
+			}
+			switch v := value.(type) {
+			case string:
+				payload[key] = v
+			case int:
+				payload[key] = fmt.Sprintf("%d", v)
+			case float64:
+				payload[key] = fmt.Sprintf("%g", v)
+			default:
+				payload[key] = fmt.Sprintf("%v", v)
+			}
+		}
+	}
+
 	return c.makeRequest("POST", "optionsymbol", payload)
 }
 
@@ -199,24 +235,77 @@ func (c *Client) SyntheticFuture(underlying, exchange, expiryDate string) (map[s
 	return c.makeRequest("POST", "syntheticfuture", payload)
 }
 
-// OptionGreeks calculates option Greeks for a symbol
-func (c *Client) OptionGreeks(symbol, exchange string, interestRate float64, underlyingSymbol, underlyingExchange string) (map[string]interface{}, error) {
+// OptionGreeks calculates Option Greeks (Delta, Gamma, Theta, Vega, Rho) and
+// Implied Volatility for an option using the Black-76 model. Requires
+// real-time LTP for the underlying and option, unless "forward_price" is
+// supplied.
+//
+// optionalParams may include:
+//   - "interest_rate" (float64): risk-free annualized rate. Defaults to 0 server-side.
+//   - "forward_price" (float64): custom forward/synthetic futures price; skips the
+//     underlying price fetch (useful for FINNIFTY/MIDCPNIFTY or scenario analysis).
+//   - "underlying_symbol" (string): override the auto-detected underlying symbol.
+//   - "underlying_exchange" (string): override the auto-detected underlying exchange.
+//   - "expiry_time" (string): custom expiry time "HH:MM", required for MCX contracts
+//     with non-standard expiry times.
+func (c *Client) OptionGreeks(symbol, exchange string, optionalParams ...map[string]interface{}) (map[string]interface{}, error) {
 	payload := map[string]interface{}{
-		"apikey":              c.apiKey,
-		"symbol":              symbol,
-		"exchange":            exchange,
-		"interest_rate":       interestRate,
-		"underlying_symbol":   underlyingSymbol,
-		"underlying_exchange": underlyingExchange,
+		"apikey":   c.apiKey,
+		"symbol":   symbol,
+		"exchange": exchange,
 	}
+
+	if len(optionalParams) > 0 {
+		for key, value := range optionalParams[0] {
+			if value != nil {
+				payload[key] = value
+			}
+		}
+	}
+
 	return c.makeRequest("POST", "optiongreeks", payload)
 }
 
-// Instruments gets all instruments for an exchange
+// allInstrumentExchanges is queried and merged when Instruments is called
+// without an exchange filter, matching the Python SDK's "download all
+// exchanges" behaviour.
+var allInstrumentExchanges = []string{"NSE", "BSE", "NFO", "BFO", "MCX", "CDS", "BCD", "NSE_INDEX", "BSE_INDEX"}
+
+// Instruments downloads trading symbols and instruments for an exchange.
+//
+// Pass an empty string to download and merge instruments across ALL
+// supported exchanges (NSE, BSE, NFO, BFO, MCX, CDS, BCD, NSE_INDEX, BSE_INDEX).
 func (c *Client) Instruments(exchange string) (map[string]interface{}, error) {
-	payload := map[string]interface{}{
-		"apikey":   c.apiKey,
-		"exchange": exchange,
+	if exchange != "" {
+		payload := map[string]interface{}{
+			"apikey":   c.apiKey,
+			"exchange": exchange,
+		}
+		return c.makeRequest("POST", "instruments", payload)
 	}
-	return c.makeRequest("POST", "instruments", payload)
+
+	// No exchange specified - fetch every supported exchange and combine.
+	var combined []interface{}
+	for _, ex := range allInstrumentExchanges {
+		payload := map[string]interface{}{
+			"apikey":   c.apiKey,
+			"exchange": ex,
+		}
+		result, err := c.makeRequest("POST", "instruments", payload)
+		if err != nil {
+			continue // skip exchanges that fail, matching Python SDK behaviour
+		}
+		if data, ok := result["data"].([]interface{}); ok {
+			combined = append(combined, data...)
+		}
+	}
+
+	if len(combined) == 0 {
+		return nil, fmt.Errorf("failed to fetch instruments from any exchange")
+	}
+
+	return map[string]interface{}{
+		"status": "success",
+		"data":   combined,
+	}, nil
 }
